@@ -1,5 +1,5 @@
-import HeroesList from "./components";
-import { IHeroData } from "./interface/heroes";
+import HeroesList from "@/components/HeroesList";
+import { IHeroData } from "@/interface/heroes";
 import styles from "./page.module.scss";
 
 async function getHeroesData(): Promise<{ data: IHeroData[] }> {
