@@ -3,10 +3,9 @@
 import { IHeroData } from "@/interface/heroes";
 import HeroDetails from "../HeroDetails";
 import styles from "./carousel.module.scss";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import HeroPicture from "../HeroPicture";
 import { AnimatePresence, motion } from "framer-motion";
-import { filter } from "framer-motion/client";
 
 enum enPosition {
   FRONT = 0,
@@ -24,6 +23,18 @@ export default function Carousel({ heroes, activeId }: IProps) {
   const [activeIndex, setActiveIndex] = useState<number>(
     heroes.findIndex((hero) => hero.id === activeId) - 1
   );
+
+  const transitionAudio = useMemo(() => new Audio("/songs/transition.mp3"), []);
+
+  const voicesAudio = useMemo(() => ({
+    "spider-man-616": new Audio("/songs/spider-man-616.mp3"),
+    "spider-woman-65": new Audio("/songs/spider-woman-65.mp3"),
+    "spider-man-1610": new Audio("/songs/spider-man-1610.mp3"),
+    "sp-dr-14512": new Audio("/songs/sp-dr-14512.mp3"),
+    "spider-ham-8311": new Audio("/songs/spider-ham-8311.mp3"),
+    "spider-man-90214": new Audio("/songs/spider-man-90214.mp3"),
+    "spider-man-928": new Audio("/songs/spider-man-928.mp3"),
+  }));
 
   useEffect(() => {
     //guarantees the array limit
@@ -53,6 +64,45 @@ export default function Carousel({ heroes, activeId }: IProps) {
       htmlEl.classList.remove("hero-page");
     };
   }, [visibleItems]);
+
+  const currentVoiceAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!visibleItems) {
+      return;
+    }
+
+    // Toca o áudio de transição
+    transitionAudio.play();
+
+    const currentHeroId = visibleItems[enPosition.MIDDLE].id;
+    const voiceAudio = voicesAudio[currentHeroId];
+
+    if (!voiceAudio) {
+      return;
+    }
+
+    // Se já existe um áudio tocando, pausa e reseta
+    if (
+      currentVoiceAudioRef.current &&
+      currentVoiceAudioRef.current !== voiceAudio
+    ) {
+      currentVoiceAudioRef.current.pause();
+      currentVoiceAudioRef.current.currentTime = 0;
+    }
+
+    voiceAudio.volume = 0.3;
+    voiceAudio.play();
+    currentVoiceAudioRef.current = voiceAudio;
+
+    // Opcional: Limpa o áudio quando o componente desmontar
+    return () => {
+      if (voiceAudio) {
+        voiceAudio.pause();
+        voiceAudio.currentTime = 0;
+      }
+    };
+  }, [visibleItems, transitionAudio, voicesAudio]);
 
   //change hero at carousel, if + clockwise or if - counterclockwise
   const handleChangeActiveIndex = (newDirection: number) => {
