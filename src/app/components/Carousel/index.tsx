@@ -23,18 +23,23 @@ export default function Carousel({ heroes, activeId }: IProps) {
   const [activeIndex, setActiveIndex] = useState<number>(
     heroes.findIndex((hero) => hero.id === activeId) - 1
   );
+  const [startInteractionPosition, setStartInteractionPosition] =
+    useState<number>(0);
 
   const transitionAudio = useMemo(() => new Audio("/songs/transition.mp3"), []);
 
-  const voicesAudio = useMemo(() => ({
-    "spider-man-616": new Audio("/songs/spider-man-616.mp3"),
-    "spider-woman-65": new Audio("/songs/spider-woman-65.mp3"),
-    "spider-man-1610": new Audio("/songs/spider-man-1610.mp3"),
-    "sp-dr-14512": new Audio("/songs/sp-dr-14512.mp3"),
-    "spider-ham-8311": new Audio("/songs/spider-ham-8311.mp3"),
-    "spider-man-90214": new Audio("/songs/spider-man-90214.mp3"),
-    "spider-man-928": new Audio("/songs/spider-man-928.mp3"),
-  }));
+  const voicesAudio: { [key: string]: HTMLAudioElement } = useMemo(
+    () => ({
+      "spider-man-616": new Audio("/songs/spider-man-616.mp3"),
+      "spider-woman-65": new Audio("/songs/spider-woman-65.mp3"),
+      "spider-man-1610": new Audio("/songs/spider-man-1610.mp3"),
+      "sp-dr-14512": new Audio("/songs/sp-dr-14512.mp3"),
+      "spider-ham-8311": new Audio("/songs/spider-ham-8311.mp3"),
+      "spider-man-90214": new Audio("/songs/spider-man-90214.mp3"),
+      "spider-man-928": new Audio("/songs/spider-man-928.mp3"),
+    }),
+    []
+  );
 
   useEffect(() => {
     //guarantees the array limit
@@ -72,7 +77,6 @@ export default function Carousel({ heroes, activeId }: IProps) {
       return;
     }
 
-    // Toca o áudio de transição
     transitionAudio.play();
 
     const currentHeroId = visibleItems[enPosition.MIDDLE].id;
@@ -82,7 +86,7 @@ export default function Carousel({ heroes, activeId }: IProps) {
       return;
     }
 
-    // Se já existe um áudio tocando, pausa e reseta
+    // If there is already audio playing, pause and reset
     if (
       currentVoiceAudioRef.current &&
       currentVoiceAudioRef.current !== voiceAudio
@@ -95,7 +99,7 @@ export default function Carousel({ heroes, activeId }: IProps) {
     voiceAudio.play();
     currentVoiceAudioRef.current = voiceAudio;
 
-    // Opcional: Limpa o áudio quando o componente desmontar
+    // Clean audio
     return () => {
       if (voiceAudio) {
         voiceAudio.pause();
@@ -104,9 +108,44 @@ export default function Carousel({ heroes, activeId }: IProps) {
     };
   }, [visibleItems, transitionAudio, voicesAudio]);
 
-  //change hero at carousel, if + clockwise or if - counterclockwise
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    setStartInteractionPosition(e.clientX);
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!startInteractionPosition) {
+      return null;
+    }
+
+    handleChangeDragTouch(e.clientX);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setStartInteractionPosition(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!startInteractionPosition || !e.changedTouches[0]) {
+      return null;
+    }
+
+    handleChangeDragTouch(e.changedTouches[0].clientX);
+  };
+
+  //change hero at carousel, if +1 clockwise or if -1 counterclockwise
   const handleChangeActiveIndex = (newDirection: number) => {
     setActiveIndex((prevActiveIndex) => prevActiveIndex + newDirection);
+  };
+
+  const handleChangeDragTouch = (clientX: number) => {
+    const endInteractionPosition = clientX;
+    const diffPosition = endInteractionPosition - startInteractionPosition;
+
+    // diffPosition > 0 => right to left
+    // diffPosition < 0 => left to right
+    const newPosition = diffPosition > 0 ? -1 : 1;
+
+    handleChangeActiveIndex(newPosition);
   };
 
   if (!visibleItems) {
@@ -118,7 +157,10 @@ export default function Carousel({ heroes, activeId }: IProps) {
       <div className={styles.carousel}>
         <div
           className={styles.wrapper}
-          onClick={() => handleChangeActiveIndex(1)}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <AnimatePresence mode="popLayout">
             {visibleItems.map((item, position) => (
