@@ -2,8 +2,8 @@
 
 const nextConfig = {
   env: {
-    API_URL: "https://67e7f91d20e3af747c400c56.mockapi.io/",
-    DOMAIN_ORIGIN: "http://localhost:3000",
+    API_URL: process.env.API_URL,
+    DOMAIN_ORIGIN: process.env.DOMAIN_ORIGIN,
   },
 };
 
