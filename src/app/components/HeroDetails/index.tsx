@@ -2,7 +2,6 @@ import { spidermanfont } from "@/fonts";
 import { IHeroData } from "@/interface/heroes";
 import styles from "./heroDetails.module.scss";
 import { Quicksand } from "next/font/google";
-import { details } from "framer-motion/client";
 import Image from "next/image";
 
 const quicksand = Quicksand({
